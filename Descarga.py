@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 from pytube import YouTube
+from urllib.error import HTTPError
+import os
 
 def descargar_video(url, ubicacion):
     try:
@@ -19,8 +21,16 @@ def descargar_video(url, ubicacion):
         else:
             messagebox.showerror("Error", "No se encontró un formato de video progresivo disponible para descargar.")
 
+    except HTTPError as e:
+        messagebox.showerror("Error", f"Ocurrió un error HTTP: {str(e)}.\nEl video podría no estar disponible.")
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error: {str(e)}")
+
+def seleccionar_ubicacion():
+    ubicacion = filedialog.askdirectory()
+    if ubicacion:
+        entry_ubicacion.delete(0, tk.END)
+        entry_ubicacion.insert(0, ubicacion)
 
 # Crear la ventana principal
 root = tk.Tk()
@@ -32,10 +42,13 @@ def manejar_descarga():
     ubicacion = entry_ubicacion.get()
 
     if not url or not ubicacion:
-        messagebox.showerror("Error", "Por favor ingresa la URL del video y la ubicación de descarga.")
+        messagebox.showerror("Error", "Por favor ingresa la URL del video y selecciona la ubicación de descarga.")
         return
 
     descargar_video(url, ubicacion)
+
+# Obtener la ruta del escritorio
+desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
 
 # Crear y posicionar los elementos en la ventana
 label_url = tk.Label(root, text="URL del video:")
@@ -45,8 +58,13 @@ entry_url.pack()
 
 label_ubicacion = tk.Label(root, text="Ubicación de descarga:")
 label_ubicacion.pack()
+
 entry_ubicacion = tk.Entry(root, width=50)
+entry_ubicacion.insert(0, desktop_path)  # Establecer la ubicación predeterminada al escritorio
 entry_ubicacion.pack()
+
+btn_seleccionar_ubicacion = tk.Button(root, text="Seleccionar ubicación", command=seleccionar_ubicacion)
+btn_seleccionar_ubicacion.pack()
 
 # Botón para descargar
 btn_descargar = tk.Button(root, text="Descargar", command=manejar_descarga)
