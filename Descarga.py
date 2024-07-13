@@ -5,21 +5,32 @@ from pytube import YouTube
 from urllib.error import HTTPError
 import os
 
-def descargar_video(url, ubicacion):
+def descargar_video(url, ubicacion, formato):
     try:
         yt = YouTube(url)
-        streams = yt.streams.filter(progressive=True).order_by('resolution').desc().first()
+        streams = yt.streams.filter(progressive=True).order_by('resolution').desc()
 
-        if streams:
+        if not streams:
+            messagebox.showerror("Error", "No se encontró un formato de video progresivo disponible para descargar.")
+            return
+
+        # Mostrar los formatos disponibles y preguntar al usuario cuál desea descargar
+        opciones_formato = [stream.mime_type.split("/")[-1] for stream in streams]
+        seleccionado = messagebox.askquestion("Seleccionar formato", 
+                                              f"Formatos disponibles: {', '.join(opciones_formato)}\n"
+                                              f"¿Deseas descargar en formato {formato}?")
+
+        if seleccionado == 'yes':
+            video = streams.first()
             # Descargar el video
-            print(f"Descargando {yt.title} en formato {streams.mime_type}...")
-            streams.download(output_path=ubicacion)
+            print(f"Descargando {yt.title} en formato {video.mime_type}...")
+            video.download(output_path=ubicacion)
             print("Descarga completada.")
 
             # Mostrar mensaje de éxito
             messagebox.showinfo("Descarga completada", f"Se ha descargado {yt.title} correctamente en {ubicacion}.")
         else:
-            messagebox.showerror("Error", "No se encontró un formato de video progresivo disponible para descargar.")
+            messagebox.showinfo("Descarga cancelada", "Descarga cancelada por el usuario.")
 
     except HTTPError as e:
         messagebox.showerror("Error", f"Ocurrió un error HTTP: {str(e)}.\nEl video podría no estar disponible.")
@@ -45,7 +56,10 @@ def manejar_descarga():
         messagebox.showerror("Error", "Por favor ingresa la URL del video y selecciona la ubicación de descarga.")
         return
 
-    descargar_video(url, ubicacion)
+    # Preseleccionar formato como mp4
+    formato = "mp4"
+
+    descargar_video(url, ubicacion, formato)
 
 # Obtener la ruta del escritorio
 desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
